@@ -23,8 +23,6 @@
 # See doc/COPYRIGHT.md for more details.
 #++
 
-# Prevent load-order problems in case openproject-plugins is listed after a plugin in the Gemfile
-# or not at all
 require 'open_project/plugins'
 
 module OpenProject::PdfExport
@@ -35,7 +33,7 @@ module OpenProject::PdfExport
 
     register 'openproject-pdf_export',
              :author_url => 'http://finn.de',
-             :requires_openproject => '>= 3.0.0' do
+             :requires_openproject => '>= 4.0.0' do
 
       menu :admin_menu,
             :export_card_configurations,

@@ -25,68 +25,69 @@
 
 
 require 'spec_helper'
+require File.dirname(__FILE__) + '/../shared_examples'
 
-describe ExportCardConfigurationsController do
+describe ExportCardConfigurationsController, :type => :controller do
   before do
-    @controller.stub(:require_admin) { true }
+    allow(@controller).to receive(:require_admin) { true }
 
     @default_config = FactoryGirl.create(:default_export_card_configuration)
     @custom_config = FactoryGirl.create(:export_card_configuration)
     @active_config = FactoryGirl.create(:active_export_card_configuration)
     @inactive_config = FactoryGirl.create(:inactive_export_card_configuration)
-
     @params = {}
     @valid_rows_yaml = "group1:\n  has_border: false\n  rows:\n    row1:\n      height: 50\n      priority: 1\n      columns:\n        id:\n          has_label: false"
     @invalid_rows_yaml = "group1:\n  invalid_property: true"
+    @invalid_property_value_format = "group1:\n  has_border: false\n  rows:\n    row1:\n      height: 50\n      priority: 1\n      columns:\n        id:\n          font_size: sd\n"
   end
 
   describe 'Create' do
-    it 'should let you create a configuration with all the values set' do
-      @params[:export_card_configuration] = {
-        name: "Config 1",
-        description: "This is a description",
-        rows: @valid_rows_yaml,
-        per_page: 5,
-        page_size: "A4",
-        orientation: "landscape"
-      }
-      post 'create', @params
-
-      response.should redirect_to :action => 'index'
-      flash[:notice].should eql(I18n.t(:notice_successful_create))
+    context 'with all the values set' do
+      it_behaves_like "should let you create a configuration" do
+        let(:params) { { :export_card_configuration => { name: "Config 1",
+                                                      description: "This is a description",
+                                                      rows: @valid_rows_yaml,
+                                                      per_page: 5,
+                                                      page_size: "A4",
+                                                      orientation: "landscape" } } }
+      end
     end
 
-    it 'should not let you create a configuration with missing data' do
-      @params[:export_card_configuration] = {
-        name: "Config 1",
-      }
-      post 'create', @params
-
-      response.should render_template('new')
+    context 'with missing data' do
+      it_behaves_like "should not let you create a configuration" do
+        let(:params) { { :export_card_configuration => { name: "Config 1" } } }
+      end
     end
 
-    it 'should not let you create a configuration with invalid data' do
-      @params[:export_card_configuration] = {
-        name: "Config 1",
-        rows: @invalid_rows_yaml,
-        per_page: 0,
-        page_size: "invalid",
-        orientation: "invalid"
-      }
-      post 'create', @params
+    context 'with invalid data' do
+      it_behaves_like "should not let you create a configuration" do
+        let(:params) { { :export_card_configuration => { name: "Config 1",
+                                                     rows: @invalid_rows_yaml,
+                                                     per_page: 0,
+                                                     page_size: "invalid",
+                                                     orientation: "invalid" } } }
+      end
+    end
 
-      response.should render_template('new')
+    context 'with invalid data format' do
+      it_behaves_like "should not let you create a configuration" do
+        let(:params) { { :export_card_configuration => { name: "Config 1",
+                                                     rows: @invalid_property_value_format,
+                                                     per_page: 1,
+                                                     page_size: "A4",
+                                                     orientation: "landscape" } } }
+      end
     end
   end
 
   describe 'Update' do
     it 'should let you update a configuration' do
       @params[:id] = @custom_config.id
-      @params[:export_card_configuration] = { per_page: 4}
+      @params[:export_card_configuration] = { per_page: 4 }
       put 'update', @params
 
-      response.should redirect_to :action => 'index'
-      flash[:notice].should eql(I18n.t(:notice_successful_update))
+      expect(response).to redirect_to :action => 'index'
+      expect(flash[:notice]).to eql(I18n.t(:notice_successful_update))
     end
 
     it 'should not let you update a configuration with invalid per_page' do
@@ -94,7 +95,7 @@ describe ExportCardConfigurationsController do
       @params[:export_card_configuration] = { per_page: 0}
       put 'update', @params
 
-      response.should render_template('edit')
+      expect(response).to render_template('edit')
     end
 
     it 'should not let you update a configuration with invalid page_size' do
@@ -102,7 +103,7 @@ describe ExportCardConfigurationsController do
       @params[:export_card_configuration] = { page_size: "invalid"}
       put 'update', @params
 
-      response.should render_template('edit')
+      expect(response).to render_template('edit')
     end
 
     it 'should not let you update a configuration with invalid orientation' do
@@ -110,7 +111,7 @@ describe ExportCardConfigurationsController do
       @params[:export_card_configuration] = { orientation: "invalid"}
       put 'update', @params
 
-      response.should render_template('edit')
+      expect(response).to render_template('edit')
     end
 
     it 'should not let you update a configuration with invalid rows yaml' do
@@ -118,7 +119,7 @@ describe ExportCardConfigurationsController do
       @params[:export_card_configuration] = { rows: "asdf ',#\""}
       put 'update', @params
 
-      response.should render_template('edit')
+      expect(response).to render_template('edit')
     end
   end
 
@@ -127,16 +128,16 @@ describe ExportCardConfigurationsController do
       @params[:id] = @custom_config.id
       delete 'destroy', @params
 
-      response.should redirect_to :action => 'index'
-      flash[:notice].should eql(I18n.t(:notice_successful_delete))
+      expect(response).to redirect_to :action => 'index'
+      expect(flash[:notice]).to eql(I18n.t(:notice_successful_delete))
     end
 
     it 'should not let you delete the default configuration' do
       @params[:id] = @default_config.id
       delete 'destroy', @params
 
-      response.should redirect_to :action => 'index'
-      flash[:notice].should eql(I18n.t(:error_can_not_delete_export_card_configuration))
+      expect(response).to redirect_to :action => 'index'
+      expect(flash[:notice]).to eql(I18n.t(:error_can_not_delete_export_card_configuration))
     end
   end
 
@@ -145,8 +146,8 @@ describe ExportCardConfigurationsController do
       @params[:id] = @inactive_config.id
       post 'activate', @params
 
-      response.should redirect_to :action => 'index'
-      flash[:notice].should eql(I18n.t(:notice_export_card_configuration_activated))
+      expect(response).to redirect_to :action => 'index'
+      expect(flash[:notice]).to eql(I18n.t(:notice_export_card_configuration_activated))
     end
   end
 
@@ -155,16 +156,16 @@ describe ExportCardConfigurationsController do
       @params[:id] = @active_config.id
       post 'deactivate', @params
 
-      response.should redirect_to :action => 'index'
-      flash[:notice].should eql(I18n.t(:notice_export_card_configuration_deactivated))
+      expect(response).to redirect_to :action => 'index'
+      expect(flash[:notice]).to eql(I18n.t(:notice_export_card_configuration_deactivated))
     end
 
     it 'should not let you de-activate the default configuration' do
       @params[:id] = @default_config.id
       post 'deactivate', @params
 
-      response.should redirect_to :action => 'index'
-      flash[:notice].should eql(I18n.t(:error_can_not_deactivate_export_card_configuration))
+      expect(response).to redirect_to :action => 'index'
+      expect(flash[:notice]).to eql(I18n.t(:error_can_not_deactivate_export_card_configuration))
     end
   end
 end
